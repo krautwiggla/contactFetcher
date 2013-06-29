@@ -7,23 +7,65 @@
 //
 
 #import "ContactViewController.h"
+#import <AddressBookUI/AddressBookUI.h>
+#import <AddressBook/AddressBook.h>
 
 @interface ContactViewController ()
+@property (weak, nonatomic) IBOutlet UITextField *firstName;
+@property (weak, nonatomic) IBOutlet UITextField *phoneNumber;
 
 @end
 
 @implementation ContactViewController
 
-- (void)viewDidLoad
+//holt den Picker
+- (IBAction)showContactPicker:(id)sender
 {
-    [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
+    ABPeoplePickerNavigationController *picker = [[ABPeoplePickerNavigationController alloc]init];
+    picker.peoplePickerDelegate = self;
+    [self presentViewController:picker animated:YES completion:NULL];
 }
 
-- (void)didReceiveMemoryWarning
+//Person anzeigen
+- (void)displayPerson:(ABRecordRef)person
 {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    NSString* name = (__bridge_transfer NSString*)ABRecordCopyValue(person,kABPersonFirstNameProperty);
+    self.firstName.text = name;
+    NSString* phone = nil;
+    ABMultiValueRef phoneNumbers = ABRecordCopyValue(person, kABPersonPhoneProperty);
+    if (ABMultiValueGetCount(phoneNumbers) > 0)
+    {
+        phone = (__bridge_transfer NSString*)
+        ABMultiValueCopyValueAtIndex(phoneNumbers, 0);
+    }
+    else
+    {
+        phone = @"[None]";
+    }
+    
+    self.phoneNumber.text = phone;
+    CFRelease(phoneNumbers);
 }
+
+//Picker wird abgebrochen
+-(void)peoplePickerNavigationControllerDidCancel:(ABPeoplePickerNavigationController *)peoplePicker
+{
+    [self dismissViewControllerAnimated:YES completion:NULL];
+}
+
+//Person wurde selektiert
+- (BOOL)peoplePickerNavigationController:(ABPeoplePickerNavigationController *)peoplePicker shouldContinueAfterSelectingPerson:(ABRecordRef)person
+{
+    [self displayPerson:person];
+    [self dismissViewControllerAnimated:YES completion:NULL];
+    return NO;
+    
+}
+
+-(BOOL)peoplePickerNavigationController:(ABPeoplePickerNavigationController *)peoplePicker shouldContinueAfterSelectingPerson:(ABRecordRef)person property:(ABPropertyID)property identifier:(ABMultiValueIdentifier)identifier
+{
+    return NO;
+}
+
 
 @end
